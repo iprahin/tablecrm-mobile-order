@@ -1,6 +1,9 @@
 const TABLECRM_API_URL = "https://app.tablecrm.com/api/v1";
 
-type SearchParams = Record<string, string | number | boolean | undefined | null>;
+export type SearchParams = Record<
+  string,
+  string | number | boolean | undefined | null
+>;
 
 function buildUrl(path: string, token: string, searchParams?: SearchParams) {
   const url = new URL(`${TABLECRM_API_URL}${path}`);
@@ -31,10 +34,29 @@ export async function tablecrmGet<T>(
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
+
     throw new Error(`TableCRM GET ${path} failed: ${response.status} ${text}`);
   }
 
   return response.json();
+}
+
+export async function tablecrmGetWithFallback<T>(
+  paths: string[],
+  token: string,
+  searchParams?: SearchParams,
+): Promise<T> {
+  const errors: string[] = [];
+
+  for (const path of paths) {
+    try {
+      return await tablecrmGet<T>(path, token, searchParams);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  throw new Error(errors.join(" | "));
 }
 
 export async function tablecrmPost<TResponse, TBody>(
@@ -54,6 +76,7 @@ export async function tablecrmPost<TResponse, TBody>(
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
+
     throw new Error(`TableCRM POST ${path} failed: ${response.status} ${text}`);
   }
 
