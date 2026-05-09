@@ -19,9 +19,9 @@ export type Product = {
   price: number;
 };
 
-export type CartItem = Product & {
+export type CartItem = Omit<Product, "price"> & {
   quantity: number;
-  discount: number;
+  price: string;
 };
 
 export type RepeatPeriod = "hours" | "days" | "weeks" | "months";

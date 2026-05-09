@@ -32,6 +32,7 @@ import type {
   Product,
   RepeatPeriod,
 } from "@/features/order/types/order.types";
+import { parseMoney } from "../lib/parse-money";
 
 const defaultRepeat = {
   enabled: false,
@@ -144,9 +145,9 @@ export function MobileOrderPage() {
       return [
         ...current,
         {
-          ...product,
-          quantity: 1,
-          discount: 0,
+         ...product,
+        quantity: 1,
+        price: product.price > 0 ? String(product.price) : "",
         },
       ];
     });
@@ -164,15 +165,13 @@ export function MobileOrderPage() {
     );
   }
 
-  function updateDiscount(productId: number, discount: number) {
-    setCart((current) =>
-      current.map((item) =>
-        item.id === productId
-          ? { ...item, discount: Math.max(discount, 0) }
-          : item,
-      ),
-    );
-  }
+   function updatePrice(productId: number, price: string) {
+  setCart((current) =>
+    current.map((item) =>
+      item.id === productId ? { ...item, price } : item,
+    ),
+  );
+}
 
   function removeProduct(productId: number) {
     setCart((current) => current.filter((item) => item.id !== productId));
@@ -183,6 +182,19 @@ export function MobileOrderPage() {
       toast.error("Заполните обязательные поля");
       return;
     }
+
+    if (cart.length === 0) {
+        toast.error("Добавьте хотя бы один товар");
+        return;
+    }
+
+    const hasInvalidPrices = cart.some((item) => parseMoney(item.price) <= 0);
+
+    if (hasInvalidPrices) {
+        toast.error("Укажите цену для каждого товара");
+        return;
+    }
+
 
     try {
       setIsSubmitting(true);
@@ -462,7 +474,7 @@ export function MobileOrderPage() {
                       <div>
                         <div className="text-sm font-medium">{item.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {item.price.toFixed(2)} ₽ за шт.
+                          {parseMoney(item.price).toFixed(2)} ₽ за шт.
                         </div>
                       </div>
 
@@ -516,17 +528,21 @@ export function MobileOrderPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Скидка, ₽</Label>
+                        <Label>Цена, ₽</Label>
                         <Input
-                          value={item.discount}
-                          onChange={(event) =>
-                            updateDiscount(
-                              item.id,
-                              toNumberOrNull(event.target.value) ?? 0,
-                            )
-                          }
-                        />
-                      </div>
+                            type="text"
+                            inputMode="decimal"
+                            value={item.price}
+                            onChange={(event) => {
+                                const value = event.target.value;
+
+                                if (/^\d*([.,]\d{0,2})?$/.test(value)) {
+                                updatePrice(item.id, value);
+                                }
+                            }}
+                            placeholder="0.00"
+                            />
+                        </div>
                     </div>
                   </div>
                 ))}

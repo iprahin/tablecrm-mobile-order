@@ -1,4 +1,5 @@
 import type { CartItem, Customer, Id, RepeatSettings } from "@/features/order/types/order.types";
+import { parseMoney } from "./parse-money";
 
 type BuildSalePayloadParams = {
   cart: CartItem[];
@@ -36,11 +37,11 @@ export function buildSalePayload(params: BuildSalePayloadParams) {
     tax_included: true,
     tax_active: true,
     goods: params.cart.map((item) => ({
-      price: item.price,
+      price: parseMoney(item.price),
       quantity: item.quantity,
       unit: item.unitId,
-      discount: item.discount,
-      sum_discounted: item.discount,
+      discount: 0,
+      sum_discounted: 0,
       nomenclature: item.id,
     })),
     settings,
